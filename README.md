@@ -104,7 +104,7 @@ app/
   api/…                       route handlers above
 lib/
   aaa-parser.js   HTML → price tables (no dependencies; matches by content, not CSS classes)
-  scraper.js      fetches all pages (4 at a time, retries, fallbacks)
+  scraper.js      fetches all pages (one at a time, backs off on HTTP 429)
   store.js        upserts into Postgres
   run-scrape.js   scrape + save + log run
   queries.js      read queries for the API
@@ -119,6 +119,7 @@ scripts/scrape.mjs  CLI runner (local / GitHub Actions)
   and closes at the current one. Weekly and monthly candles track the high and low of the
   days inside them.
 - Check AAA's website terms before you use this data publicly or commercially. The scraper
-  requests about 53 pages once a day, 4 at a time, with a short delay between requests.
+  requests about 53 pages once a day, one at a time, with about 1.5s between responses.
+  A HTTP 429 waits and retries that page instead of skipping the state.
 - The charts use [TradingView Lightweight Charts™](https://www.tradingview.com/lightweight-charts/)
   (Apache-2.0). Its attribution logo is kept on purpose.

@@ -86,6 +86,29 @@ test('scrapeAll end-to-end with mocked fetch (incl. one failing state)', async (
   assert.equal(r.errors[0].page, 'CA');
 });
 
+test('scrapeAll retries HTTP 429 instead of skipping the state', async () => {
+  let txHits = 0;
+  const fetchImpl = async (url) => {
+    if (url.endsWith('aaa.com/')) return new Response(fx('home.html'), { status: 200 });
+    if (url.includes('state-gas-price-averages')) return new Response(fx('state-averages.html'), { status: 200 });
+    if (url.includes('state=TX')) {
+      txHits += 1;
+      if (txHits < 3) return new Response('slow down', { status: 429, headers: { 'retry-after': '1' } });
+      return new Response(fx('state-TX.html'), { status: 200 });
+    }
+    return new Response('blocked', { status: 403 });
+  };
+  const r = await scrapeAll({
+    states: [{ code: 'TX', name: 'Texas' }],
+    fetchImpl,
+    delayMs: 0,
+    sleepImpl: async () => {},
+  });
+  assert.equal(txHits, 3);
+  assert.equal(r.errors.length, 0);
+  assert.ok(r.regions.find((x) => x.code === 'TX-houston'));
+});
+
 test('price points: current is observed, other columns are back-filled', () => {
   const pts = toPricePoints('2026-09-25', [
     { region: 'US', grade: 'regular', current: 4.49, yesterday: 4.48, week_ago: 4.47, month_ago: 4.1, year_ago: 3.16 },
