@@ -1,0 +1,24 @@
+{
+  "name": "gas-terminal",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "scrape": "node scripts/scrape.mjs",
+    "scrape:dry": "node scripts/scrape.mjs --dry",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.0",
+    "lightweight-charts": "^5.0.0",
+    "next": "^15.5.7",
+    "react": "^19.1.2",
+    "react-dom": "^19.1.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

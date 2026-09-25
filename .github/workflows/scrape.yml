@@ -1,0 +1,25 @@
+# Backup scraper. Only needed if AAA blocks requests coming from Vercel's servers
+# (you'd see "HTTP 403" in the Scraper log on the site).
+# Setup: GitHub repo → Settings → Secrets and variables → Actions → New secret
+#        DATABASE_URL = your Neon connection string
+# Then un-comment the "schedule" lines below.
+name: Daily AAA scrape
+
+on:
+  workflow_dispatch: {}
+  # schedule:
+  #   - cron: '15 13 * * *'   # every day 13:15 UTC
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run scrape
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
