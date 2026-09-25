@@ -143,7 +143,85 @@ export default function PriceChart({ candles, type, ma = [], compare = null, the
     chart.timeScale().fitContent();
   }, [ready, candles, type, ma, compare, theme]);
 
-  return <div ref={boxRef} className="chart-canvas" />;
+  const zoom = (factor) => {
+    const chart = api.current?.chart;
+    if (!chart || !candles.length) return;
+    const ts = chart.timeScale();
+    const range = ts.getVisibleLogicalRange();
+    if (!range) return;
+    const span = range.to - range.from;
+    const next = Math.min(Math.max(span * factor, 5), Math.max(candles.length + 6, span));
+    if (Math.abs(next - span) < 0.25) return;
+    const mid = (range.from + range.to) / 2;
+    const last = candles.length - 1;
+    const pinnedRight = range.to >= last - 0.5;
+    ts.setVisibleLogicalRange(pinnedRight
+      ? { from: range.to - next, to: range.to }
+      : { from: mid - next / 2, to: mid + next / 2 });
+  };
+
+  const pan = (dir) => {
+    const chart = api.current?.chart;
+    if (!chart || !candles.length) return;
+    const ts = chart.timeScale();
+    const range = ts.getVisibleLogicalRange();
+    if (!range) return;
+    const span = range.to - range.from;
+    const shift = Math.max(span * 0.22, 1) * dir;
+    const minFrom = -1;
+    const maxTo = candles.length - 1 + 4;
+    let from = range.from + shift;
+    let to = range.to + shift;
+    if (from < minFrom) {
+      from = minFrom;
+      to = minFrom + span;
+    }
+    if (to > maxTo) {
+      to = maxTo;
+      from = maxTo - span;
+    }
+    ts.setVisibleLogicalRange({ from, to });
+  };
+
+  const resetView = () => api.current?.chart.timeScale().fitContent();
+
+  return (
+    <>
+      <div ref={boxRef} className="chart-canvas" />
+      {candles.length > 0 && (
+        <div className="chart-nav" role="toolbar" aria-label="Chart navigation">
+          <button type="button" aria-label="Zoom out" title="Zoom out" onClick={() => zoom(1.25)}>
+            <NavIcon><path d="M3.2 8h9.6" /></NavIcon>
+          </button>
+          <button type="button" aria-label="Zoom in" title="Zoom in" onClick={() => zoom(0.8)}>
+            <NavIcon>
+              <path d="M8 3.2v9.6M3.2 8h9.6" />
+            </NavIcon>
+          </button>
+          <button type="button" aria-label="Scroll left" title="Scroll left" onClick={() => pan(-1)}>
+            <NavIcon><path d="M10.2 3.2 5.4 8l4.8 4.8" /></NavIcon>
+          </button>
+          <button type="button" aria-label="Scroll right" title="Scroll right" onClick={() => pan(1)}>
+            <NavIcon><path d="M5.8 3.2 10.6 8l-4.8 4.8" /></NavIcon>
+          </button>
+          <button type="button" aria-label="Reset view" title="Reset view" onClick={resetView}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
+function NavIcon({ children }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {children}
+    </svg>
+  );
 }
 
 function hexA(hex, a) {
